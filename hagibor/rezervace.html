@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rezervace · Hagibor</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#02070b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Chakra+Petch:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="grid" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="index.html">HAGIBOR</a>
+    <div class="lang" role="group" aria-label="Language / Jazyk">
+      <button type="button" data-lang="cs" aria-pressed="true">CZ</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<main class="page soon">
+  <div class="panel">
+    <h1 id="s-title">Rezervační systém připravujeme</h1>
+    <p class="pick" id="s-pick"></p>
+    <p id="s-text">Než jej spustíme, domluvte si termín e-mailem nebo telefonem.</p>
+    <p><a class="c-value" href="mailto:sportujemezdrave@gmail.com">sportujemezdrave@gmail.com</a></p>
+    <p><a class="c-value" href="tel:+420775026558">+420&nbsp;775&nbsp;026&nbsp;558</a></p>
+    <a class="btn btn-line" id="s-back" href="index.html#haly">Zpět na haly</a>
+  </div>
+</main>
+
+<script src="grid.js"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var T = {
+    cs: {
+      title: "Rezervační systém připravujeme",
+      text: "Než jej spustíme, domluvte si termín e-mailem nebo telefonem.",
+      back: "Zpět na haly",
+      halls: { "1": "Hala 1", "2": "Hala 2", "3": "Malý sál" },
+      types: { jednorazove: "jednorázově", dlouhodobe: "dlouhodobě" }
+    },
+    en: {
+      title: "Online booking is coming soon",
+      text: "Until it launches, book your slot by e-mail or phone.",
+      back: "Back to the halls",
+      halls: { "1": "Hall 1", "2": "Hall 2", "3": "Small hall" },
+      types: { jednorazove: "one-time", dlouhodobe: "long-term" }
+    }
+  };
+  function detect() {
+    var l = q.get("lang");
+    if (l === "cs" || l === "en") return l;
+    try { l = localStorage.getItem("hagibor-lang"); } catch (e) {}
+    if (l === "cs" || l === "en") return l;
+    var n = String((navigator.languages && navigator.languages[0]) || navigator.language || "en").toLowerCase();
+    return n.indexOf("cs") === 0 || n.indexOf("sk") === 0 ? "cs" : "en";
+  }
+  var lang = detect();
+  function render() {
+    var t = T[lang];
+    document.documentElement.lang = lang;
+    document.getElementById("s-title").textContent = t.title;
+    document.getElementById("s-text").textContent = t.text;
+    document.getElementById("s-back").textContent = t.back;
+    var hall = t.halls[q.get("hala")], type = t.types[q.get("typ")];
+    var pick = document.getElementById("s-pick");
+    pick.textContent = hall ? hall + (type ? " · " + type : "") : "";
+    pick.hidden = !hall;
+    document.querySelectorAll(".lang button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === lang));
+    });
+  }
+  document.querySelectorAll(".lang button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      lang = b.getAttribute("data-lang");
+      try { localStorage.setItem("hagibor-lang", lang); } catch (e) {}
+      render();
+    });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

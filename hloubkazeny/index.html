@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hloubka ženy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --forest-deep: #060f08;
+    --forest-mid: #0e2012;
+    --forest-accent: #1e4028;
+    --leaf-glow: #7ec488;
+    --leaf-pale: #c8e6c0;
+    --glass-bg: rgba(255,255,255,0.07);
+    --glass-border: rgba(200,240,200,0.18);
+    --text-bright: #f0f8f0;
+    --text-soft: rgba(220,240,220,0.75);
+    --text-dim: rgba(180,210,180,0.55);
+    --spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--forest-deep);
+    color: var(--text-bright);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ─── BACKGROUND ─── */
+  #bg-layer { position: fixed; inset: 0; z-index: 0; }
+  #bg-img {
+    position: absolute; inset: 0;
+    background: url('https://hloubkazeny.com/images/backgroundForest.webp') center/cover no-repeat;
+    filter: blur(8px) brightness(0.42) saturate(1.2);
+    transform: scale(1.05);
+  }
+  #bg-canvas {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 1.5s;
+  }
+
+  /* ─── PAGE ─── */
+  #page {
+    position: relative; z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    padding-bottom: 100px;
+  }
+
+  /* ─── HERO IMAGE ─── */
+  #hero-image-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 40px;
+    padding-bottom: 8px;
+  }
+  #hero-circle {
+    position: relative;
+    width: clamp(220px, 46vw, 360px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.0);
+    transform-origin: center center;
+    /* GPU-composited: only opacity + transform, no layout triggers */
+    transition:
+      opacity 2.6s var(--ease-out-expo),
+      transform 2.6s var(--ease-out-expo);
+    will-change: transform, opacity;
+    box-shadow:
+      0 0 0 2px rgba(200,240,200,0.18),
+      0 0 60px 8px rgba(126,196,136,0.18),
+      0 8px 64px rgba(0,0,0,0.55);
+  }
+  #hero-circle.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+  #hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* Start invisible, fade in once loaded */
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #hero-img.loaded { opacity: 1; }
+
+  /* ─── HEADLINE ─── */
+  .headline-block {
+    text-align: center;
+    margin-top: 26px;
+    padding: 0 24px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 1.8s 0.5s var(--ease-out-expo), transform 1.8s 0.5s var(--ease-out-expo);
+    will-change: transform, opacity;
+  }
+  .headline-block.visible { opacity: 1; transform: none; }
+  h1.site-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(2.4rem, 7vw, 5rem);
+    letter-spacing: 0.04em;
+    color: var(--text-bright);
+    line-height: 1.1;
+  }
+  .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1rem, 3vw, 1.45rem);
+    color: var(--leaf-pale);
+    letter-spacing: 0.06em;
+    margin-top: 10px;
+    opacity: 0.82;
+  }
+
+  /* ─── BUBBLES SECTION ─── */
+  #bubbles-section {
+    width: 100%;
+    max-width: 1000px;
+    padding: 60px 24px 16px;
+    opacity: 0;
+    transition: opacity 1.6s 1.0s ease;
+  }
+  #bubbles-section.visible { opacity: 1; }
+  #bubbles-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px 24px;
+  }
+  #bubbles-loading {
+    color: var(--text-dim);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 32px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── BUBBLE ───
+     KEY FIX: Float animation lives on .bubble-wrap (the outer layer).
+     Hover scale lives on .bubble (the inner layer).
+     They never share the same `transform` property → zero jitter.
+  ─── */
+  .bubble-wrap {
+    position: relative;
+    /* Staggered entrance: start invisible and collapsed to a point */
+    opacity: 0;
+    transform: scale(0.0);
+    transform-origin: center center;
+    transition:
+      opacity 1.2s var(--ease-out-expo),
+      transform 1.2s var(--ease-out-expo);
+    will-change: transform, opacity;
+  }
+  .bubble-wrap.entered {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Float animation on wrap — isolated from hover */
+  .bubble-wrap.float-active {
+    animation: bubbleFloat var(--float-dur, 9s) var(--float-delay, 0s) ease-in-out infinite;
+  }
+
+  .bubble {
+    position: relative;
+    width: clamp(120px, 26vw, 165px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    overflow: hidden;
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    background: var(--glass-bg);
+    border: 1.5px solid var(--glass-border);
+    box-shadow:
+      0 4px 32px rgba(0,0,0,0.38),
+      inset 0 1px 0 rgba(255,255,255,0.13);
+    /* Only scale & shadow change on hover — GPU composited */
+    transition:
+      transform 0.7s var(--spring),
+      box-shadow 0.7s ease,
+      opacity 0.7s ease;
+    will-change: transform;
+    opacity: 0.92;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bubble:hover {
+    transform: scale(1.07);
+    box-shadow:
+      0 8px 48px rgba(0,0,0,0.45),
+      inset 0 1px 0 rgba(255,255,255,0.18),
+      0 0 28px 4px rgba(126,196,136,0.2);
+    opacity: 1;
+  }
+  .bubble:active {
+    transform: scale(0.97);
+    transition-duration: 0.2s;
+  }
+
+  /* ─── BUBBLE IMAGE ───
+     Reliable fade-in pattern:
+     – img starts at opacity 0
+     – JS adds .img-loaded class after the image's `load` event
+     – Smooth 0.6s ease transition, no pop
+  ─── */
+  .bubble-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    border-radius: 50%;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .bubble-img.img-loaded { opacity: 0.82; }
+  .bubble:hover .bubble-img.img-loaded { opacity: 0.96; }
+
+  /* shimmer rim — runs on transform: rotate, always GPU */
+  .bubble::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 120deg,
+      rgba(200,240,200,0.0) 0%,
+      rgba(200,240,200,0.22) 30%,
+      rgba(200,240,200,0.0) 60%
+    );
+    animation: rimRotate 12s linear infinite;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .bubble-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 32px 10px 13px;
+    background: linear-gradient(to top, rgba(6,15,8,0.85) 0%, transparent 100%);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(0.78rem, 2.1vw, 0.95rem);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-align: center;
+    color: var(--leaf-pale);
+    border-radius: 0 0 50% 50%;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+    pointer-events: none;
+    /* Fade in alongside image */
+    opacity: 0;
+    transition: opacity 0.6s ease 0.2s;
+  }
+  .bubble-img.img-loaded ~ .bubble-label,
+  .bubble-wrap.entered .bubble-label {
+    opacity: 1;
+  }
+
+  @keyframes bubbleFloat {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    30%       { transform: translateY(-13px) scale(1.012); }
+    70%       { transform: translateY(-6px) scale(0.995); }
+  }
+  @keyframes rimRotate {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ─── MODAL BACKDROP ─── */
+  #modal-overlay {
+    position: fixed; inset: 0; z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: none;
+    /* Backdrop opacity animated via these custom properties */
+    background: rgba(4,10,5,0.0);
+    transition: background 0.9s ease, backdrop-filter 0.9s ease;
+  }
+  #modal-overlay.open {
+    background: rgba(4,10,5,0.65);
+    pointer-events: all;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* ─── MODAL CARD ───
+     Grows from its own center point like it's materialising from nothing.
+  ─── */
+  #modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    max-height: 88dvh;
+    border-radius: 28px;
+    background: rgba(12, 26, 15, 0.72);
+    border: 1px solid rgba(200,240,200,0.2);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+    backdrop-filter: blur(32px) saturate(1.5);
+    -webkit-backdrop-filter: blur(32px) saturate(1.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* Start collapsed to a point at its own center */
+    opacity: 0;
+    transform: scale(0.0);
+    transform-origin: center center;
+    transition:
+      opacity 0.9s var(--ease-out-expo),
+      transform 0.9s var(--ease-out-expo);
+    will-change: transform, opacity;
+  }
+  #modal-overlay.open #modal-card {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ─── GALLERY ─── */
+  #modal-gallery {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+    background: var(--forest-deep);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── GALLERY IMAGES ───
+     FIX: Both outgoing and incoming images co-exist in the DOM.
+     Cross-dissolve: outgoing fades to 0, incoming fades to 1.
+     No popping, no flicker. Timing offset ensures seamless overlap.
+  ─── */
+  .gallery-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.55s ease;
+    will-change: opacity;
+  }
+  .gallery-img.active { opacity: 1; }
+  /* Slight scale-up on active for a cinematic pull-in */
+  .gallery-img.active {
+    opacity: 1;
+    transform: scale(1.0);
+  }
+  .gallery-img:not(.active) {
+    transform: scale(0.98);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+
+  .gallery-arrow {
+    position: absolute; top: 50%; z-index: 5;
+    transform: translateY(-50%);
+    background: rgba(12,26,15,0.62);
+    border: 1px solid var(--glass-border);
+    color: var(--leaf-pale);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    font-size: 1.2rem;
+    transition: background 0.2s, transform 0.25s var(--spring), opacity 0.2s;
+    user-select: none;
+    will-change: transform;
+  }
+  .gallery-arrow:hover { background: rgba(30,64,40,0.8); transform: translateY(-50%) scale(1.12); }
+  .gallery-arrow:active { transform: translateY(-50%) scale(0.94); transition-duration: 0.1s; }
+  #arrow-prev { left: 12px; }
+  #arrow-next { right: 12px; }
+
+  .gallery-dots {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 5;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(200,240,200,0.35);
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.25s var(--spring), width 0.25s ease;
+  }
+  /* Active dot grows and lightens */
+  .dot.active {
+    background: var(--leaf-glow);
+    transform: scale(1.4);
+  }
+
+  /* modal text body */
+  #modal-body {
+    padding: 28px 32px 36px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(126,196,136,0.25) transparent;
+  }
+  #modal-body h1, #modal-body h2, #modal-body h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    color: var(--text-bright);
+    margin-bottom: 12px;
+  }
+  #modal-body h1 { font-size: clamp(1.5rem, 4vw, 2.1rem); }
+  #modal-body h2 { font-size: clamp(1.2rem, 3vw, 1.5rem); margin-top: 18px; }
+  #modal-body p  { font-size: clamp(0.88rem, 2.2vw, 1rem); line-height: 1.78; color: var(--text-soft); margin-bottom: 10px; }
+  #modal-body strong { color: var(--leaf-pale); font-weight: 500; }
+  #modal-body hr { border: none; border-top: 1px solid rgba(200,240,200,0.12); margin: 16px 0; }
+
+  /* close btn */
+  #modal-close {
+    position: absolute; top: 14px; right: 14px; z-index: 10;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(12,26,15,0.7);
+    border: 1px solid var(--glass-border);
+    color: var(--leaf-pale);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.5s ease 0.7s, background 0.3s, transform 0.35s var(--spring);
+    will-change: transform;
+  }
+  #modal-overlay.open #modal-close { opacity: 1; }
+  #modal-close:hover { background: rgba(50,90,55,0.8); transform: scale(1.1); }
+  #modal-close:active { transform: scale(0.92); transition-duration: 0.08s; }
+
+  /* ─── CONTACT ─── */
+  #contact {
+    margin-top: 72px;
+    text-align: center;
+    padding: 38px 36px;
+    border-radius: 24px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    max-width: 460px;
+    width: calc(100% - 48px);
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transform-origin: center bottom;
+    transition: opacity 1.4s ease, transform 1.4s var(--ease-out-expo);
+  }
+  #contact.visible { opacity: 1; transform: translateY(0) scale(1); }
+  .contact-intro {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: var(--leaf-pale);
+    margin-bottom: 18px;
+    letter-spacing: 0.03em;
+  }
+  .contact-item {
+    display: block;
+    margin: 9px 0;
+    font-size: clamp(0.88rem, 2.2vw, 0.98rem);
+    color: var(--text-soft);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .contact-item:hover { color: var(--leaf-glow); }
+
+  /* responsive */
+  @media (max-width: 500px) {
+    #modal-body { padding: 18px 18px 24px; }
+    .bubble { width: clamp(100px, 38vw, 138px); }
+    #bubbles-container { gap: 22px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bubble-wrap { animation: none !important; }
+    .bubble::before { animation: none; }
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg-layer">
+  <div id="bg-img"></div>
+  <canvas id="bg-canvas"></canvas>
+</div>
+
+<div id="page">
+
+  <div id="hero-image-wrap">
+    <div id="hero-circle">
+      <img id="hero-img"
+        src="https://filipmracek.com/images/katkaTitle.webp"
+        alt="Hloubka ženy"
+        loading="eager"
+        onerror="this.src='https://filipmracek.com/images/titleImage.webp'; this.onerror=null;">
+    </div>
+  </div>
+
+  <div class="headline-block" id="headline">
+    <h1 class="site-title">Hloubka ženy</h1>
+    <p class="subtitle">Následuj svou autentickou vnitřní sílu</p>
+  </div>
+
+  <section id="bubbles-section" aria-label="Témata">
+    <div id="bubbles-loading">načítám...</div>
+    <div id="bubbles-container" style="display:none"></div>
+  </section>
+
+  <div id="contact">
+    <p class="contact-intro">Kontaktovat mě můžete na:</p>
+    <a class="contact-item" href="mailto:katerina@hloubkazeny.com">katerina@hloubkazeny.com</a>
+    <a class="contact-item" href="tel:+420737888547">+420 737 888 547</a>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" role="dialog" aria-modal="true" aria-label="Detail">
+  <div id="modal-card">
+    <button id="modal-close" aria-label="Zavřít">✕</button>
+    <div id="modal-gallery" style="height: 0; display: none;">
+      <button class="gallery-arrow" id="arrow-prev" aria-label="Předchozí">‹</button>
+      <button class="gallery-arrow" id="arrow-next" aria-label="Další">›</button>
+      <div class="gallery-dots" id="gallery-dots"></div>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── BACKGROUND CANVAS FALLBACK ───
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let w, h, t  = 0;
+  const orbs = [
+    { cx:0.15, cy:0.3,  r:0.45, hue:140, sx:0.0003,  sy:0.0002  },
+    { cx:0.75, cy:0.6,  r:0.5,  hue:158, sx:-0.0002, sy:0.0003  },
+    { cx:0.5,  cy:0.85, r:0.4,  hue:125, sx:0.00025, sy:-0.0002 },
+    { cx:0.9,  cy:0.1,  r:0.35, hue:153, sx:-0.0003, sy:0.00025 },
+  ];
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  function draw() {
+    t++;
+    ctx.fillStyle = '#060f08'; ctx.fillRect(0,0,w,h);
+    orbs.forEach(o => {
+      const x = (o.cx + Math.sin(t*o.sx)*0.18)*w;
+      const y = (o.cy + Math.cos(t*o.sy)*0.15)*h;
+      const r = o.r * Math.min(w,h) * 0.7;
+      const g = ctx.createRadialGradient(x,y,0,x,y,r);
+      const a = 0.13 + 0.06*Math.sin(t*0.008);
+      g.addColorStop(0, `hsla(${o.hue},55%,22%,${a})`);
+      g.addColorStop(1, 'hsla(140,40%,8%,0)');
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(draw);
+  }
+  draw();
+  const testImg = new Image();
+  testImg.onerror = () => { document.getElementById('bg-img').style.opacity='0'; canvas.style.opacity='1'; };
+  testImg.src = 'https://hloubkazeny.com/images/backgroundForest.webp';
+})();
+
+// ─── HERO IMAGE FADE-IN ───
+// Reliable: listen for load event, then add class. Works for cached images too.
+const heroImg = document.getElementById('hero-img');
+function onHeroLoaded() { heroImg.classList.add('loaded'); }
+if (heroImg.complete && heroImg.naturalWidth > 0) {
+  onHeroLoaded();
+} else {
+  heroImg.addEventListener('load', onHeroLoaded);
+  heroImg.addEventListener('error', onHeroLoaded); // still show on error
+}
+
+// ─── ENTRY ANIMATIONS ───
+window.addEventListener('load', () => {
+  // Small rAF delay ensures paint is committed before animating
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.getElementById('hero-circle').classList.add('visible');
+      document.getElementById('headline').classList.add('visible');
+    });
+  });
+});
+
+// ─── CSV & BUBBLES ───
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS-mNiGo1pfXTRbLPKxyKOu2fTpg40U8dYO8ixkrud1lsR5k7DAc4yR9JBJhDJoVR2JrftZKhKu6w8c/pub?gid=0&single=true&output=csv';
+const IMG_BASE  = 'https://filipmracek.com/images/';
+
+function parseCSV(text) {
+  const rows  = [];
+  const lines = text.trim().split('\n');
+  const header = splitCSVRow(lines[0]).map(h => h.trim().toLowerCase());
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVRow(lines[i]);
+    if (!cols[0]?.trim()) continue;
+    const obj = {};
+    header.forEach((h, idx) => { obj[h] = (cols[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVRow(line) {
+  const result = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
+    else if (c===',' && !inQ) { result.push(cur); cur=''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+function getImages(row) {
+  return ['bubbleimage1','bubbleimage2','bubbleimage3','bubbleimage4','bubbleimage5']
+    .map(k => row[k]).filter(Boolean);
+}
+
+// ─── STAGGERED BUBBLE ENTRANCE via IntersectionObserver ───
+// Bubbles animate in as they become visible, with a slight stagger per index.
+function setupBubbleEntrance(wraps) {
+  const STAGGER = 140; // ms between each bubble — slower, more magical
+
+  if (!('IntersectionObserver' in window)) {
+    // Fallback for old browsers: just show them all
+    wraps.forEach(w => w.classList.add('entered'));
+    return;
+  }
+
+  let staggerQueue = [];
+  let staggerTimer = null;
+
+  function flushQueue() {
+    if (!staggerQueue.length) return;
+    const wrap = staggerQueue.shift();
+    wrap.classList.add('entered');
+    // Start float animation only after entrance is done
+    setTimeout(() => wrap.classList.add('float-active'), 1300);
+    if (staggerQueue.length) {
+      staggerTimer = setTimeout(flushQueue, STAGGER);
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        observer.unobserve(entry.target);
+        staggerQueue.push(entry.target);
+        if (!staggerTimer) {
+          staggerTimer = setTimeout(() => {
+            staggerTimer = null;
+            flushQueue();
+          }, 50);
+        }
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+  wraps.forEach(wrap => observer.observe(wrap));
+}
+
+async function loadBubbles() {
+  const container = document.getElementById('bubbles-container');
+  const loading   = document.getElementById('bubbles-loading');
+  try {
+    const res  = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('fetch failed');
+    const rows = parseCSV(await res.text());
+
+    loading.style.display = 'none';
+    container.style.display = 'flex';
+
+    const floatDurs   = [9.5, 11.0, 10.2, 9.8, 12.0, 10.8, 11.5, 9.2];
+    const floatDelays = [0, 1.2, 2.4, 0.6, 1.8, 3.0, 0.9, 2.1];
+    const allWraps = [];
+
+    rows.forEach((row, idx) => {
+      const id      = row['bubbleid'] || '';
+      const label   = row['displaybubbletext'] || id.replace(/([A-Z])/g,' $1').trim();
+      const content = row['bubbletext'] || '';
+      const images  = getImages(row);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+      wrap.style.setProperty('--float-dur',   floatDurs[idx % floatDurs.length]+'s');
+      wrap.style.setProperty('--float-delay', floatDelays[idx % floatDelays.length]+'s');
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.setAttribute('role', 'button');
+      bubble.setAttribute('tabindex', '0');
+      bubble.setAttribute('aria-label', label);
+
+      if (images[0]) {
+        const img = document.createElement('img');
+        img.className = 'bubble-img';
+        img.alt = label;
+        // ── Reliable image fade-in ──
+        // 1. Don't set src yet (avoids race conditions with lazy loading)
+        // 2. Wire up load listener first, then set src
+        // 3. On load: add .img-loaded → CSS transition fades in smoothly
+        function onImgReady() { img.classList.add('img-loaded'); }
+        if (img.complete && img.naturalWidth > 0) {
+          onImgReady();
+        } else {
+          img.addEventListener('load', onImgReady, { once: true });
+          img.addEventListener('error', onImgReady, { once: true });
+        }
+        img.src = IMG_BASE + images[0];
+        bubble.appendChild(img);
+      } else {
+        // No image: show label with full opacity from the start
+        wrap.addEventListener('transitionend', () => {
+          const lbl = wrap.querySelector('.bubble-label');
+          if (lbl) lbl.style.opacity = '1';
+        }, { once: true });
+      }
+
+      const lbl = document.createElement('div');
+      lbl.className = 'bubble-label';
+      lbl.textContent = label;
+      bubble.appendChild(lbl);
+
+      // If there's an image, label fades in via CSS sibling rule.
+      // If no image, show label after entrance animation.
+      if (!images[0]) {
+        lbl.style.opacity = '0';
+        lbl.style.transition = 'opacity 0.8s ease';
+        setTimeout(() => { lbl.style.opacity = '1'; }, 1400 + idx * 140);
+      }
+
+      const onClick = () => openModal(bubble, label, content, images);
+      bubble.addEventListener('click', onClick);
+      bubble.addEventListener('keydown', e => {
+        if (e.key==='Enter'||e.key===' ') { e.preventDefault(); onClick(); }
+      });
+
+      wrap.appendChild(bubble);
+      container.appendChild(wrap);
+      allWraps.push(wrap);
+    });
+
+    // Wire up staggered entrance
+    setupBubbleEntrance(allWraps);
+
+    setTimeout(() => document.getElementById('bubbles-section').classList.add('visible'), 200);
+    setTimeout(() => document.getElementById('contact').classList.add('visible'), 700);
+  } catch(err) {
+    loading.textContent = 'Obsah se načítá…';
+    console.error(err);
+  }
+}
+
+// ─── MODAL ───
+let galleryImages = [], galleryIndex = 0;
+const overlay = document.getElementById('modal-overlay');
+let modalOpen = false;
+let activeBubbleEl = null;
+
+function openModal(bubbleEl, title, htmlContent, images) {
+  if (modalOpen) return;
+  modalOpen = true;
+  activeBubbleEl = bubbleEl;
+
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const pad = 20;
+  const targetW = Math.min(680, vw - pad * 2);
+  const targetH = Math.min(vh * 0.88, vh - pad * 2);
+
+  // ── Populate modal content ──
+  const body    = document.getElementById('modal-body');
+  const gallery = document.getElementById('modal-gallery');
+  const dotsEl  = document.getElementById('gallery-dots');
+  const prevBtn = document.getElementById('arrow-prev');
+  const nextBtn = document.getElementById('arrow-next');
+
+  body.innerHTML = htmlContent || '';
+  // Clear previous gallery images
+  gallery.querySelectorAll('.gallery-img').forEach(el => el.remove());
+  dotsEl.innerHTML = '';
+  galleryImages = []; galleryIndex = 0;
+
+  const hasImages = images && images.length > 0;
+  if (hasImages) {
+    const galH = Math.max(180, Math.min(targetH * 0.52, 360));
+    gallery.style.height = galH + 'px';
+    gallery.style.display = 'flex';
+
+    images.forEach((src, i) => {
+      const img = document.createElement('img');
+      img.className = 'gallery-img' + (i === 0 ? ' active' : '');
+      img.alt = '';
+      // Preload immediately — no lazy loading inside modal
+      img.src = IMG_BASE + src;
+      gallery.insertBefore(img, prevBtn);
+      galleryImages.push(img);
+
+      if (images.length > 1) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => goToSlide(i));
+        dotsEl.appendChild(dot);
+      }
+    });
+
+    const multi = images.length > 1;
+    prevBtn.style.display = multi ? 'flex' : 'none';
+    nextBtn.style.display = multi ? 'flex' : 'none';
+    dotsEl.style.display  = multi ? 'flex' : 'none';
+  } else {
+    gallery.style.display = 'none';
+    gallery.style.height  = '0';
+  }
+
+  // ── Open: just add class, CSS handles the spring animation ──
+  document.body.style.overflow = 'hidden';
+  overlay.classList.add('open');
+
+  // Focus close button after animation completes
+  setTimeout(() => {
+    document.getElementById('modal-close').focus();
+  }, 950);
+}
+
+function goToSlide(idx) {
+  if (!galleryImages.length) return;
+
+  // Cross-dissolve: remove active from current, add to new
+  const prev = galleryImages[galleryIndex];
+  const dots = document.querySelectorAll('.dot');
+
+  dots[galleryIndex]?.classList.remove('active');
+  prev.classList.remove('active');
+
+  galleryIndex = (idx + galleryImages.length) % galleryImages.length;
+
+  dots[galleryIndex]?.classList.add('active');
+  galleryImages[galleryIndex].classList.add('active');
+}
+
+document.getElementById('arrow-prev').addEventListener('click', () => goToSlide(galleryIndex-1));
+document.getElementById('arrow-next').addEventListener('click', () => goToSlide(galleryIndex+1));
+
+function closeModal() {
+  if (!modalOpen) return;
+
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+
+  // Wait for CSS transition to finish, then clean up
+  setTimeout(() => {
+    activeBubbleEl = null;
+    modalOpen = false;
+  }, 920);
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModal();
+  if (e.key==='ArrowLeft')  goToSlide(galleryIndex-1);
+  if (e.key==='ArrowRight') goToSlide(galleryIndex+1);
+});
+
+// Touch swipe for gallery
+let touchStartX = 0;
+document.getElementById('modal-gallery').addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+document.getElementById('modal-gallery').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 40) goToSlide(dx < 0 ? galleryIndex+1 : galleryIndex-1);
+});
+
+loadBubbles();
+</script>
+</body>
+</html>

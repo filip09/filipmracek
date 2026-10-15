@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sportovní hala Hagibor</title>
+<meta name="description" content="Pronájem sportovních hal Hagibor, Izraelská 3160/6, Praha 10. Florbal, basketbal, futsal, házená, volejbal, menší sporty.">
+<meta name="theme-color" content="#02070b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Chakra+Petch:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="grid" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="mark" href="#top">HAGIBOR</a>
+    <div class="lang" role="group" aria-label="Language / Jazyk">
+      <button type="button" data-lang="cs" aria-pressed="true">CZ</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="top">
+  <section class="hero">
+    <h1 class="title" id="title"><span class="title-fallback">SPORTOVNÍ HALA HAGIBOR</span></h1>
+    <p class="tagline" data-t="tagline">Pronájem sportovních hal · <b>Praha 10</b></p>
+  </section>
+
+  <section class="panel info" aria-labelledby="info-h">
+    <h2 class="eyebrow" id="info-h" data-t="infoEyebrow">Hala v kostce</h2>
+    <ul class="facts" id="facts"></ul>
+  </section>
+
+  <section class="halls-sec" id="haly" aria-labelledby="halls-h">
+    <h2 class="section-title" id="halls-h" data-t="hallsTitle">Tělocvičny k pronájmu</h2>
+    <div class="halls" id="halls"></div>
+  </section>
+
+  <section class="contact-sec" id="kontakt" aria-labelledby="contact-h">
+    <h2 class="section-title" id="contact-h" data-t="contactTitle">Kontakt</h2>
+    <div class="panel contact">
+      <div>
+        <span class="c-label" data-t="address">Adresa</span>
+        <span class="c-value" data-t="addressValue">Izraelská 3160/6, Praha 10</span>
+        <a class="c-link" href="https://www.google.com/maps/search/?api=1&amp;query=Izraelsk%C3%A1%203160%2F6%2C%20Praha%2010" target="_blank" rel="noopener" data-t="openMap">Otevřít v mapách</a>
+      </div>
+      <div>
+        <span class="c-label" data-t="email">E-mail</span>
+        <a class="c-value" href="mailto:sportujemezdrave@gmail.com">sportujemezdrave@gmail.com</a>
+      </div>
+      <div>
+        <span class="c-label" data-t="phone">Telefon</span>
+        <a class="c-value" href="tel:+420775026558">+420&nbsp;775&nbsp;026&nbsp;558</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credit"><span data-t="credit">Web by</span> <a href="https://filipmracek.com" target="_blank" rel="noopener">filipmracek.com</a></footer>
+</main>
+
+<script src="grid.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

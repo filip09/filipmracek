@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Konzultace – Filip Mrácek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --glass: rgba(255,255,255,0.055);
+    --glass-border: rgba(255,255,255,0.11);
+    --glass-hover: rgba(255,255,255,0.09);
+    --text-primary: rgba(255,248,238,0.96);
+    --text-secondary: rgba(255,235,210,0.62);
+    --text-muted: rgba(255,220,180,0.35);
+    --accent: rgba(255,185,100,0.90);
+    --accent-soft: rgba(255,165,80,0.15);
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background: #0a0502;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Canvas background that slowly shifts hue ── */
+  #bgCanvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Language switcher ── */
+  .lang-switch {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,200,120,0.20);
+    border-radius: 30px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .lang-btn {
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    transition: color 0.25s, background 0.25s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .lang-btn.active {
+    background: rgba(255,175,80,0.18);
+    color: var(--accent);
+  }
+
+  /* ── Layout ── */
+  .page { position: relative; z-index: 1; }
+
+  section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 110px;
+    padding-bottom: 90px;
+  }
+
+  .avatar-ring {
+    width: 148px;
+    height: 148px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, rgba(255,185,80,0.55), rgba(220,120,60,0.35), rgba(255,200,120,0.20));
+    margin-bottom: 36px;
+    box-shadow: 0 0 70px rgba(220,130,40,0.22);
+  }
+
+  .avatar-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    margin-top: 12px;
+    margin-bottom: 22px;
+    max-width: 620px;
+  }
+
+  .subtitle1 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  .h1-pre {
+    display: block;
+    font-size: 1em;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 0.05em;
+    font-family: 'Playfair Display', Georgia, serif;
+    text-transform: none;
+    line-height: 1.4;
+  }
+
+  .subtitle2 {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    max-width: 540px;
+    font-style: italic;
+  }
+
+  /* ── Section titles ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 48px;
+    text-align: center;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,185,100,0.25), transparent);
+    margin: 0 auto 64px;
+  }
+
+  /* ── Story path ── */
+  .story-path {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .story-rect {
+    width: 100%;
+    max-width: 560px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 20px 28px;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 0.35s, border-color 0.35s, color 0.35s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1), padding 0.35s;
+  }
+
+  .story-rect:hover {
+    background: var(--glass-hover);
+    border-color: rgba(255,185,100,0.28);
+    color: var(--text-primary);
+    transform: scaleX(1.04) scaleY(1.06);
+    padding: 26px 34px;
+  }
+
+  .story-rect.highlighted {
+    background: rgba(200,110,40,0.12);
+    border-color: rgba(255,185,100,0.32);
+    color: var(--text-primary);
+  }
+
+  .story-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 2px;
+  }
+
+  .story-arrow .arrow-line {
+    width: 1px;
+    height: 20px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(255,185,100,0.42));
+  }
+
+  .story-arrow .arrow-head {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid rgba(255,185,100,0.48);
+  }
+
+  /* ── References ── */
+  .reference-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 36px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  .ref-avatar-wrap {
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .ref-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,185,100,0.22);
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: block;
+  }
+
+  .ref-avatar-wrap:hover .ref-avatar {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(220,130,50,0.28);
+  }
+
+  .ref-avatar-wrap.expanded .ref-avatar {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(80vw, 400px);
+    height: min(80vw, 400px);
+    z-index: 999;
+    box-shadow: 0 0 100px rgba(0,0,0,0.85), 0 0 60px rgba(200,120,40,0.30);
+    border-radius: 50%;
+    cursor: zoom-out;
+  }
+
+  .ref-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 998;
+    backdrop-filter: blur(5px);
+  }
+  .ref-overlay.active { display: block; }
+
+  .ref-content { flex: 1; }
+
+  .ref-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .ref-role {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .ref-text {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .ref-text::before { content: '\201E'; color: var(--accent); font-size: 20px; line-height: 0; vertical-align: -5px; margin-right: 2px; }
+  .ref-text::after  { content: '\201C'; color: var(--accent); font-size: 20px; line-height: 0; vertical-align: -5px; margin-left: 2px; }
+
+  /* ── CTA section ── */
+  .cta-grid { display: flex; flex-direction: column; gap: 16px; }
+
+  .cta-rect {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 0.35s, border-color 0.35s, color 0.35s, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .cta-rect:hover {
+    background: var(--glass-hover);
+    border-color: rgba(255,185,100,0.25);
+    color: var(--text-primary);
+    transform: scaleX(1.025) scaleY(1.05);
+  }
+
+  .cta-rect.cta-highlight {
+    background: rgba(200,110,40,0.10);
+    border-color: rgba(255,185,100,0.30);
+  }
+
+  .cta-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .cta-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .cta-rect a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,185,100,0.35);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .cta-rect a:hover {
+    color: rgba(255,210,140,1);
+    border-color: rgba(255,210,140,0.7);
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 40px 24px 60px;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 580px) {
+    section { padding: 60px 20px; }
+    .hero { padding-top: 90px; padding-bottom: 70px; }
+    .reference-card { flex-direction: column; gap: 20px; }
+    .ref-avatar { width: 60px; height: 60px; }
+    .cta-rect { padding: 18px 20px; }
+    .story-rect { padding: 18px 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #bgCanvas { display: none; }
+    body { background: #0a0502; }
+  }
+
+  /* hide/show language content */
+  [data-lang] { display: none; }
+  .lang-cs [data-lang="cs"],
+  .lang-en [data-lang="en"] { display: block; }
+  .lang-cs .inline-cs,
+  .lang-en .inline-en { display: inline; }
+  .inline-cs, .inline-en { display: none; }
+</style>
+</head>
+<body class="lang-cs">
+
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+<!-- Language switcher -->
+<div class="lang-switch" role="group" aria-label="Language / Jazyk">
+  <button class="lang-btn active" id="btn-cs" onclick="setLang('cs')">CS</button>
+  <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+</div>
+
+<div class="ref-overlay" id="overlay" onclick="closeExpanded()"></div>
+
+<div class="page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="avatar-ring">
+      <img src="https://filipmracek.com/images/filipFace.webp" alt="Filip Mrácek" onerror="this.src='https://filipmracek.com/images/eva.webp'">
+    </div>
+
+    <p class="subtitle1">
+      <span data-lang="cs">Svoboda &bull; Sebevědomí &bull; Úplnost &bull; Radost &bull; Flow</span>
+      <span data-lang="en">Freedom &bull; Confidence &bull; Wholeness &bull; Joy &bull; Flow</span>
+    </p>
+
+    <h1>
+      <span data-lang="cs">Umění relaxovaného života</span>
+      <span data-lang="en">The Art of Relaxed Living</span>
+    </h1>
+
+    <p class="subtitle2">
+      <span data-lang="cs">Čím zrelaxovanější jsme, tím lépe se cítíme a tím lépe se nám daří ve všech oblastech. Jen relaxace přináší skutečnou radost a hojnost.</span>
+      <span data-lang="en">The more relaxed we are, the better we feel — and the better we do in every area of life. Only relaxation brings true joy and abundance.</span>
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ SECTION 1: STORY ══ -->
+  <section>
+    <h2 class="section-title">
+      <span data-lang="cs">Můj příběh</span>
+      <span data-lang="en">My story</span>
+    </h2>
+
+    <div class="story-path">
+
+      <div class="story-rect">
+        <span data-lang="cs">Silná traumata, problematické rodinné prostředí</span>
+        <span data-lang="en">Deep traumas, a difficult family environment</span>
+      </div>
+      <div class="story-arrow" aria-hidden="true"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+      <div class="story-rect">
+        <span data-lang="cs">Podlomené sebevědomí, úzkosti, problematické vztahy, přiškrcený flow</span>
+        <span data-lang="en">Undermined confidence, anxiety, troubled relationships, suppressed flow</span>
+      </div>
+      <div class="story-arrow" aria-hidden="true"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+      <div class="story-rect">
+        <span data-lang="cs">Funkční metody, upřímné sebepoznávání a uvolňování ducha i těla</span>
+        <span data-lang="en">Effective methods, honest self-inquiry, and releasing tension in mind and body</span>
+      </div>
+      <div class="story-arrow" aria-hidden="true"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+      <div class="story-rect">
+        <span data-lang="cs">Nenásilná, přirozená a velmi příjemná transformace</span>
+        <span data-lang="en">Gentle, natural, and deeply pleasant transformation</span>
+      </div>
+      <div class="story-arrow" aria-hidden="true"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+      <div class="story-rect highlighted">
+        <span data-lang="cs">Autentické sebevědomí, vnitřní svoboda, flow, krásné vztahy</span>
+        <span data-lang="en">Authentic confidence, inner freedom, flow, beautiful relationships</span>
+      </div>
+      <div class="story-arrow" aria-hidden="true"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+      <div class="story-rect highlighted">
+        <span data-lang="cs">Sdílení funkčních metod s ostatními, konzultace</span>
+        <span data-lang="en">Sharing effective methods with others — consultations</span>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ SECTION 2: TESTIMONIAL ══ -->
+  <section>
+    <div class="reference-card">
+      <div class="ref-avatar-wrap" id="avatarWrap" onclick="toggleAvatar()" title="Click to expand">
+        <img class="ref-avatar" id="refAvatar" src="https://filipmracek.com/images/eva.webp" alt="Eva">
+      </div>
+      <div class="ref-content">
+        <p class="ref-name">Eva XXX</p>
+        <p class="ref-role">
+          <span data-lang="cs">Psycholožka</span>
+          <span data-lang="en">Psychologist</span>
+        </p>
+        <p class="ref-text">
+          <span data-lang="cs">Filip mi v podstatě mezi řečí pomohl identifikovat omezující programy a navrhl funkční způsoby, jak s nimi intuitivně pracovat. Jako profesionální psycholožka cením, že jde jemně a přitom přímočaře k věci.</span>
+          <span data-lang="en">Almost in passing, Filip helped me identify my limiting patterns and suggested practical ways to work with them intuitively. As a professional psychologist, I appreciate that he moves gently yet directly to the heart of things.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ══ SECTION 3: CTA ══ -->
+  <section>
+    <h2 class="section-title" style="margin-bottom: 4px;">
+      <span data-lang="cs">Konzultace</span>
+      <span data-lang="en">Consultations</span>
+    </h2>
+    <h2 class="section-title">
+      <span data-lang="cs">Jdeme do toho?</span>
+      <span data-lang="en">Ready to start?</span>
+    </h2>
+
+    <div class="cta-grid">
+
+      <div class="cta-rect">
+        <div class="cta-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg>
+        </div>
+        <div>
+          <span data-lang="cs">Online nebo osobně v Praze</span>
+          <span data-lang="en">Online or in person in Prague</span>
+        </div>
+      </div>
+
+      <div class="cta-rect">
+        <div class="cta-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div>
+          <span data-lang="cs">Progresivní sazba na základě Vaší profese: <strong style="color:var(--text-primary)">1 200,– až 2 400,–&nbsp;Kč/hod</strong></span>
+          <span data-lang="en">Sliding scale based on your profession: <strong style="color:var(--text-primary)">1,200 – 2,400&nbsp;CZK/hr</strong></span>
+        </div>
+      </div>
+
+      <div class="cta-rect">
+        <div class="cta-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        </div>
+        <div>
+          <span data-lang="cs">Mým cílem je co nejméně našich setkání. Je na vás dělat změny. Moje role je navigovat Vás, jen když je potřeba.</span>
+          <span data-lang="en">My goal is as few sessions as possible. Change is yours to make. My role is to navigate — only when needed.</span>
+        </div>
+      </div>
+
+      <div class="cta-rect cta-highlight">
+        <div class="cta-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div>
+          <span data-lang="cs">Napište si o nezávazný informativní call: <a href="mailto:connect@filipmracek.com">connect@filipmracek.com</a></span>
+          <span data-lang="en">Drop a line for a free introductory call: <a href="mailto:connect@filipmracek.com">connect@filipmracek.com</a></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    &copy; <span id="year"></span> Filip Mrácek &nbsp;&middot;&nbsp; filipmracek.com
+  </footer>
+
+</div>
+
+<script>
+/* ── Dynamic year ── */
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ── Language switcher ── */
+function setLang(lang) {
+  document.body.className = 'lang-' + lang;
+  document.documentElement.lang = lang;
+  document.getElementById('btn-cs').classList.toggle('active', lang === 'cs');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  localStorage.setItem('pref-lang', lang);
+}
+
+(function initLang() {
+  const saved = localStorage.getItem('pref-lang');
+  if (saved) { setLang(saved); return; }
+  const browser = (navigator.language || navigator.userLanguage || 'cs').toLowerCase();
+  setLang(browser.startsWith('cs') || browser.startsWith('sk') ? 'cs' : 'en');
+})();
+
+/* ── Avatar expand ── */
+function toggleAvatar() {
+  const wrap = document.getElementById('avatarWrap');
+  const overlay = document.getElementById('overlay');
+  const expanded = wrap.classList.toggle('expanded');
+  overlay.classList.toggle('active', expanded);
+}
+function closeExpanded() {
+  document.getElementById('avatarWrap').classList.remove('expanded');
+  document.getElementById('overlay').classList.remove('active');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExpanded(); });
+
+/* ── Canvas: Apple-style smooth living mesh, no circles ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.getElementById('bgCanvas').style.display = 'none';
+    return;
+  }
+
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+
+  /* Low-res offscreen buffer — scales up for the softness */
+  const OFF = 80;
+  const off = document.createElement('canvas');
+  off.width = off.height = OFF;
+  const octx = off.getContext('2d');
+  const img = octx.createImageData(OFF, OFF);
+  const px = img.data;
+
+  let W, H;
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* Warm color poles — each drifts through space and hue over time.
+     No position is ever fully "center" of anything — they're influence
+     fields mixed per-pixel by smooth falloff functions.            */
+  const poles = [
+    /* hue°  sat  lig  x0   y0   hDrift  xFreq   yFreq   xAmp  yAmp  phase */
+    { h:22,  s:82, l:14, x:0.10, y:0.08, hd:3.5, xf:0.000031, yf:0.000027, xa:0.22, ya:0.18, ph:0.00 },
+    { h:10,  s:88, l:11, x:0.85, y:0.20, hd:4.2, xf:0.000024, yf:0.000038, xa:0.18, ya:0.24, ph:1.57 },
+    { h:35,  s:75, l:13, x:0.55, y:0.75, hd:5.0, xf:0.000041, yf:0.000022, xa:0.26, ya:0.20, ph:3.14 },
+    { h:18,  s:70, l:9, x:0.20, y:0.60, hd:2.8, xf:0.000019, yf:0.000045, xa:0.20, ya:0.22, ph:0.80 },
+    { h:44,  s:65, l:10, x:0.72, y:0.85, hd:6.0, xf:0.000055, yf:0.000031, xa:0.15, ya:0.25, ph:2.20 },
+  ];
+
+  /* hsl → rgb (0-255 integers) */
+  function hsl2rgb(h, s, l) {
+    s /= 100; l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+    return [f(0) * 255 | 0, f(8) * 255 | 0, f(4) * 255 | 0];
+  }
+
+  function draw(now) {
+    requestAnimationFrame(draw);
+    const t = now * 0.001; /* seconds */
+
+    /* Animate pole positions and hues */
+    const live = poles.map((p, i) => ({
+      cx: p.x + p.xa * Math.sin(now * p.xf + p.ph),
+      cy: p.y + p.ya * Math.cos(now * p.yf + p.ph * 0.7),
+      h:  (p.h + p.hd * Math.sin(now * 0.000013 + i)) % 60 + 5,
+      s:  p.s + 6 * Math.sin(now * 0.000009 + i * 0.7),
+      l:  Math.max(6, p.l + 4 * Math.cos(now * 0.000011 + i * 1.1)),
+    }));
+
+    /* Per-pixel soft mix — no arc(), no hard boundary */
+    for (let py2 = 0; py2 < OFF; py2++) {
+      const fy = py2 / (OFF - 1);
+      for (let px2 = 0; px2 < OFF; px2++) {
+        const fx = px2 / (OFF - 1);
+
+        /* Each pole contributes via inverse-square-ish soft weight.
+           Exponent 2.4 gives gentle, not hard, falloff.             */
+        let wSum = 0, rAcc = 0, gAcc = 0, bAcc = 0;
+        for (const p of live) {
+          const dx = fx - p.cx, dy = fy - p.cy;
+          const d2 = dx * dx + dy * dy;
+          const w  = 1 / (d2 + 0.04); /* +0.04 prevents infinity, controls softness */
+          const [r, g, b] = hsl2rgb(p.h, p.s, p.l);
+          rAcc += r * w; gAcc += g * w; bAcc += b * w; wSum += w;
+        }
+
+        const idx = (py2 * OFF + px2) * 4;
+        px[idx]   = rAcc / wSum | 0;
+        px[idx+1] = gAcc / wSum | 0;
+        px[idx+2] = bAcc / wSum | 0;
+        px[idx+3] = 255;
+      }
+    }
+
+    octx.putImageData(img, 0, 0);
+
+    /* Scale the soft 80×80 mesh up to full canvas with browser smoothing */
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(off, 0, 0, W, H);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

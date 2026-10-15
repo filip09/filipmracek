@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery · Filip Mráček</title>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta id="og-type"  property="og:type"       content="website">
+<meta id="og-site"  property="og:site_name"  content="Filip Mráček">
+<meta id="og-title" property="og:title"      content="Gallery · Filip Mráček">
+<meta id="og-image" property="og:image"      content="">
+<meta id="og-url"   property="og:url"        content="">
+<style>
+  :root {
+    --gold:#c9a84c;--gold-light:#e8c97a;--gold-dim:#a07830;--cream:#f5efe0;
+    --dark-1:#080a0e;--dark-2:#0d1018;--dark-4:#161b28;--dark-5:#1b2135;
+    --text-main:#e8e0d0;--text-dim:#9a9080;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:"Comfortaa",cursive;background:linear-gradient(180deg,var(--dark-1) 0%,var(--dark-5) 100%);background-attachment:fixed;color:var(--text-main);min-height:100vh;}
+
+  /* NAV */
+  nav{padding:18px 28px;display:flex;gap:10px;align-items:center;background:rgba(3,5,10,.75);backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,168,76,.08);position:sticky;top:0;z-index:10;}
+  nav a{font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;border-bottom:1px solid rgba(201,168,76,.2);padding-bottom:1px;transition:color .3s,border-color .3s;}
+  nav a:hover{color:var(--gold);border-color:var(--gold);}
+  .sep{color:rgba(201,168,76,.3);font-size:.8rem;}
+
+  /* GRID HEADER */
+  .grid-header{padding:52px 24px 36px;text-align:center;background:linear-gradient(180deg,#03050a 0%,var(--dark-2) 100%);border-bottom:1px solid rgba(201,168,76,.08);}
+  .grid-header h1{font-size:clamp(1.8rem,5vw,3rem);font-weight:300;letter-spacing:.18em;text-transform:uppercase;color:var(--cream);}
+  .grid-header .subtitle{margin-top:10px;font-size:.85rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;}
+
+  /* GRID */
+  .gallery-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;max-width:1200px;margin:48px auto;padding:0 24px 80px;}
+  .paint-card{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid rgba(201,168,76,.12);background:#08090d;cursor:pointer;text-decoration:none;display:block;transition:transform .3s,box-shadow .3s,border-color .3s;}
+  .paint-card:hover{transform:translateY(-4px);box-shadow:0 12px 48px rgba(201,168,76,.2);border-color:rgba(201,168,76,.35);}
+  .paint-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;pointer-events:none;}
+  .paint-card:hover img{transform:scale(1.05);}
+  .paint-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(3,5,10,.88) 0%,transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:16px;}
+  .paint-card:hover .paint-card-overlay{opacity:1;}
+  .paint-card-name{font-size:.82rem;font-weight:600;letter-spacing:.1em;color:var(--cream);text-transform:uppercase;line-height:1.3;}
+
+  /* DETAIL */
+  .detail-wrap{max-width:1100px;margin:0 auto;padding:60px 24px 100px;display:flex;gap:60px;align-items:flex-start;animation:fadeUp .5s ease both;}
+  .paint-img-col{flex:0 0 50%;position:sticky;top:72px;}
+  .paint-img-frame{border-radius:14px;overflow:hidden;border:1px solid rgba(201,168,76,.15);box-shadow:0 16px 80px rgba(0,0,0,.7);background:#08090d;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
+  .paint-img-frame img{width:100%;height:100%;object-fit:contain;display:block;}
+  .paint-info-col{flex:1;display:flex;flex-direction:column;gap:20px;padding-top:8px;}
+  .paint-name{font-size:clamp(1.5rem,3.5vw,2.4rem);font-weight:300;letter-spacing:.14em;text-transform:uppercase;color:var(--cream);line-height:1.2;}
+  .paint-meta-table{display:flex;flex-direction:column;gap:10px;border-top:1px solid rgba(201,168,76,.12);padding-top:20px;}
+  .paint-meta-row{display:flex;gap:12px;font-size:.88rem;}
+  .paint-meta-label{color:var(--gold);font-weight:600;letter-spacing:.08em;min-width:80px;flex-shrink:0;}
+  .paint-meta-value{color:var(--text-dim);}
+  .paint-price{font-size:1.3rem;font-weight:600;color:var(--gold);letter-spacing:.1em;border-top:1px solid rgba(201,168,76,.12);padding-top:20px;}
+  .paint-story{font-size:.9rem;font-weight:300;line-height:1.9;color:var(--text-dim);border-top:1px solid rgba(201,168,76,.12);padding-top:20px;}
+  .paint-actions{display:flex;flex-wrap:wrap;gap:10px;padding-top:8px;}
+
+  /* BUTTONS */
+  .btn-gold{display:inline-block;text-decoration:none;background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:#080a0e;font-family:"Comfortaa",cursive;font-weight:700;font-size:.82rem;letter-spacing:.12em;padding:11px 24px;border-radius:40px;transition:all .3s;border:none;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 20px rgba(201,168,76,.2);}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(201,168,76,.35);background:linear-gradient(135deg,var(--gold),var(--gold-light));}
+  .btn-outline{display:inline-block;text-decoration:none;border:1px solid var(--gold-dim);color:var(--gold);font-family:"Comfortaa",cursive;font-weight:600;font-size:.82rem;letter-spacing:.12em;padding:10px 22px;border-radius:40px;transition:all .3s;background:transparent;cursor:pointer;text-transform:uppercase;}
+  .btn-outline:hover{background:rgba(201,168,76,.08);border-color:var(--gold);transform:translateY(-2px);}
+
+  /* STATUS */
+  #status{text-align:center;padding:120px 20px;color:var(--text-dim);font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;}
+  .spinner{width:32px;height:32px;border:2px solid rgba(201,168,76,.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+
+  /* FOOTER */
+  footer{text-align:center;padding:28px 20px;font-size:.75rem;color:var(--text-dim);letter-spacing:.1em;border-top:1px solid rgba(201,168,76,.08);background:#03050a;}
+
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+  @media(max-width:700px){
+    .detail-wrap{flex-direction:column;gap:32px;padding:0 0 80px;}
+    .paint-img-col{position:static;flex:none;width:100%;}
+    .paint-img-frame{border-radius:0;border-left:none;border-right:none;aspect-ratio:1/1;}
+    .paint-info-col{padding:0 16px;}
+  }
+  @media(max-width:500px){
+    .gallery-page-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://filipmracek.com">Filip Mráček</a>
+  <span class="sep">›</span>
+  <a href="gallery.html">Gallery</a>
+  <span class="sep" id="navSep" style="display:none">›</span>
+  <span id="navCurrent" style="display:none;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-main);"></span>
+</nav>
+
+<div id="status"><div class="spinner"></div>Loading…</div>
+
+<!-- GRID VIEW -->
+<div id="gridView" style="display:none">
+  <div class="grid-header">
+    <h1>Gallery</h1>
+    <p class="subtitle">Filip Mráček · Paintings</p>
+  </div>
+  <div class="gallery-page-grid" id="grid"></div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="detail-wrap" id="detailView" style="display:none">
+  <div class="paint-img-col">
+    <div class="paint-img-frame"><img id="dImg" src="" alt=""></div>
+  </div>
+  <div class="paint-info-col">
+    <div class="paint-name" id="dName"></div>
+    <div class="paint-meta-table" id="dMeta"></div>
+    <div class="paint-price" id="dPrice" style="display:none"></div>
+    <div class="paint-story" id="dStory" style="display:none"></div>
+    <div class="paint-actions">
+      <a href="gallery.html" class="btn-outline">← All Paintings</a>
+      <button class="btn-outline" id="shareBtn" onclick="copyLink()">🔗 Copy Link</button>
+      <a href="#" class="btn-gold" id="inquireBtn" style="display:none">Inquire</a>
+    </div>
+  </div>
+</div>
+
+<footer>All rights reserved · Filip Mráček</footer>
+
+<script>
+const BASE="https://docs.google.com/spreadsheets/d/e/2PACX-1vSGRTfZYVwz_LQjVADqsjj2nxznyePHMc7qh8DwezIZLFVMbx01KONwDr9PsqJxLVWUGzuvL0DARrJ6/pub?output=csv";
+const PAINT_GID="1372046533";
+const IMG_BASE="https://filipmracek.com/images/";
+
+function parseCSV(text){
+  const lines=text.trim().split("\n");
+  const headers=lines[0].split(",").map(h=>h.trim().replace(/^"|"$/g,""));
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur="",inQ=false;
+    for(let c of line){
+      if(c==="\""){inQ=!inQ;}
+      else if(c===","&&!inQ){vals.push(cur.trim());cur="";}
+      else{cur+=c;}
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/^"|"$/g,""));
+    return obj;
+  });
+}
+
+function getSlug(){return new URLSearchParams(window.location.search).get("p")||"";}
+function hideStatus(){document.getElementById("status").style.display="none";}
+
+function showGrid(data){
+  hideStatus();
+  const grid=document.getElementById("grid");
+  data.forEach(row=>{
+    const slug=row["paintingPicture"];
+    if(!slug)return;
+    const card=document.createElement("a");
+    card.className="paint-card";
+    card.href="gallery.html?p="+encodeURIComponent(slug);
+    card.innerHTML=`<img src="${IMG_BASE+slug}.webp" alt="${row["paintingName"]||slug}" loading="lazy"><div class="paint-card-overlay"><div class="paint-card-name">${row["paintingName"]||slug}</div></div>`;
+    grid.appendChild(card);
+  });
+  document.getElementById("gridView").style.display="block";
+}
+
+function addMeta(label,value){
+  const row=document.createElement("div");
+  row.className="paint-meta-row";
+  row.innerHTML=`<span class="paint-meta-label">${label}</span><span class="paint-meta-value">${value}</span>`;
+  document.getElementById("dMeta").appendChild(row);
+}
+
+function showDetail(row){
+  const slug=row["paintingPicture"];
+  const name=row["paintingName"]||slug;
+  const imgUrl=IMG_BASE+slug+".webp";
+  document.getElementById("navSep").style.display="";
+  document.getElementById("navCurrent").textContent=name;
+  document.getElementById("navCurrent").style.display="";
+  document.getElementById("dImg").src=imgUrl;
+  document.getElementById("dImg").alt=name;
+  document.getElementById("dName").textContent=name;
+  if(row["paintingSize"])addMeta("Size",row["paintingSize"]);
+  if(row["paintingMaterial"])addMeta("Material",row["paintingMaterial"]);
+  if(row["paintingPrice"]){
+    const el=document.getElementById("dPrice");
+    el.textContent=row["paintingPrice"];el.style.display="block";
+    const btn=document.getElementById("inquireBtn");
+    btn.href="mailto:connectwith@filipmracek.com?subject=Inquiry: "+encodeURIComponent(name);
+    btn.style.display="inline-block";
+  }
+  if(row["paintingStory"]){
+    const el=document.getElementById("dStory");
+    el.textContent=row["paintingStory"];el.style.display="block";
+  }
+  document.title=name+" · Filip Mráček";
+  document.getElementById("og-title").content=name+" · Filip Mráček";
+  document.getElementById("og-image").content=imgUrl;
+  document.getElementById("og-url").content=window.location.href;
+  hideStatus();
+  document.getElementById("detailView").style.display="flex";
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(window.location.href).then(()=>{
+    const btn=document.getElementById("shareBtn");
+    btn.textContent="✓ Copied!";
+    setTimeout(()=>{btn.textContent="🔗 Copy Link";},2000);
+  });
+}
+
+function showError(msg){
+  const s=document.getElementById("status");
+  const sp=s.querySelector(".spinner");
+  if(sp)sp.style.display="none";
+  s.textContent=msg;
+}
+
+(async()=>{
+  try{
+    const r=await fetch(`${BASE}&gid=${PAINT_GID}`);
+    const data=parseCSV(await r.text());
+    const slug=getSlug();
+    if(slug){
+      const row=data.find(d=>d["paintingPicture"]===slug);
+      row?showDetail(row):showError("Painting not found.");
+    }else{
+      showGrid(data);
+    }
+  }catch(e){showError("Could not load paintings.");}
+})();
+</script>
+</body>
+</html>
