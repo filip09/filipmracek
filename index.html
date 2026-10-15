@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#050b18">
+<meta name="theme-color" content="#04060b">
 <title>Filip Mráček</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +14,8 @@
   :root {
     color-scheme: dark;
 
-    --bg: #050b18;
-    --bg-2: #0a1830;
+    --bg: #04060b;
+    --bg-2: #030408;
     --accent: #5ce1ff;          /* cyan — the "light" in the grid */
     --accent-light: #b8f4ff;
     --accent-dim: #2a8fd6;
@@ -35,10 +35,10 @@
     --panel-hover: rgba(255,255,255,0.06);
 
     /* living background — JS shifts these as you scroll */
-    --atmos-base: #050b18;
-    --atmos-a: rgba(61,123,255,0.30);
-    --atmos-b: rgba(92,225,255,0.09);
-    --atmos-c: rgba(163,149,255,0.08);
+    --atmos-base: #04060b;
+    --atmos-a: rgba(50,95,190,0.13);
+    --atmos-b: rgba(70,170,220,0.04);
+    --atmos-c: rgba(90,90,170,0.03);
 
     --font-display: 'Sora', system-ui, sans-serif;
     --font-text: 'Lexend', system-ui, sans-serif;
@@ -167,12 +167,6 @@
     pointer-events: none; z-index: -1;
   }
   .hero-floor canvas { display: block; width: 100%; height: 100%; }
-  .hero-horizon {
-    position: absolute; left: 0; right: 0; bottom: var(--floor-h, 42%); height: 1px; z-index: -1;
-    background: linear-gradient(90deg, transparent 10%, rgba(92,225,255,0.35) 50%, transparent 90%);
-    box-shadow: 0 0 22px 1px rgba(92,225,255,0.14);
-    pointer-events: none;
-  }
   .hero-runs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
   body.no-grid .hero-floor, body.no-grid .hero-horizon, body.no-grid .hero-blueprint, body.no-grid .hero-runs { display: none; }
 
@@ -562,7 +556,6 @@
 <section id="hero">
   <div class="hero-blueprint" aria-hidden="true"></div>
   <canvas class="hero-runs" id="runsCanvas" aria-hidden="true"></canvas>
-  <div class="hero-horizon" aria-hidden="true"></div>
   <div class="hero-floor" aria-hidden="true"><canvas id="floorCanvas"></canvas></div>
   <div class="hero-photo-wrap" id="hero-photo-wrap">
     <div id="hero-photo-skeleton" class="skeleton skeleton-photo"></div>
@@ -1344,7 +1337,8 @@ const FLOOR = {
     // fade towards the horizon and towards the bottom edge
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, `rgba(${rgb},0)`);
-    g.addColorStop(0.3, `rgba(${rgb},0.16)`);
+    g.addColorStop(0.14, `rgba(${rgb},0.015)`);   // lines bunch up near the horizon: keep it soft there
+    g.addColorStop(0.42, `rgba(${rgb},0.16)`);
     g.addColorStop(0.7, `rgba(${rgb},0.16)`);
     g.addColorStop(1, `rgba(${rgb},0)`);
     ctx.strokeStyle = g; ctx.lineWidth = 1;
@@ -1357,8 +1351,9 @@ const FLOOR = {
       if (y < 1) break;
       ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(W, Math.round(y) + 0.5);
     }
-    // columns: straight lines from the vanishing point
-    const reach = Math.ceil((W / 2) / (f * this.sw / this.zNear)) + 1;
+    // columns: straight lines from the vanishing point. Include every column that
+    // crosses the visible area, also the outer ones that leave through the sides.
+    const reach = Math.ceil((W / 2) / (this.sw * H * 0.04)) + 1;
     for (let k = -reach; k <= reach; k++) {
       const xb = cx + f * k * this.sw / this.zNear;
       ctx.moveTo(cx, 0); ctx.lineTo(xb, H);
@@ -1577,14 +1572,13 @@ function hexToRgba(hex, a = 1) {
   const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255, a];
 }
-const MOODS = [
-  { base: [10, 10, 31, 1],  a: [88, 70, 200, 0.22],  b: [40, 90, 160, 0.12],  c: [150, 80, 160, 0.10] }, // ink indigo
-  { base: [3, 20, 22, 1],   a: [20, 140, 140, 0.18], b: [30, 80, 120, 0.12],  c: [90, 160, 140, 0.08] }, // deep teal
-  { base: [18, 7, 26, 1],   a: [130, 50, 140, 0.20], b: [70, 40, 130, 0.12],  c: [180, 80, 120, 0.08] }, // aubergine
-  { base: [5, 15, 11, 1],   a: [40, 120, 80, 0.16],  b: [20, 80, 90, 0.10],   c: [120, 140, 80, 0.06] }, // night forest
-  { base: [18, 10, 6, 1],   a: [160, 90, 40, 0.16],  b: [120, 50, 40, 0.10],  c: [200, 140, 80, 0.06] }, // warm umber
-  { base: [8, 10, 16, 1],   a: [80, 100, 140, 0.16], b: [60, 70, 100, 0.10],  c: [120, 120, 160, 0.07] }, // graphite blue
-  { base: [4, 8, 24, 1],    a: [30, 60, 170, 0.20],  b: [20, 120, 160, 0.08], c: [60, 40, 120, 0.08] }, // midnight
+const MOODS = [   // dark, mostly black; a deep-blue tint only now and then
+  { base: [3, 4, 7, 1],   a: [40, 60, 110, 0.06],  b: [30, 50, 80, 0.035],  c: [50, 50, 80, 0.03] },  // night
+  { base: [4, 7, 16, 1],  a: [35, 75, 170, 0.12],  b: [40, 120, 170, 0.045], c: [60, 60, 140, 0.04] }, // deep navy
+  { base: [6, 7, 9, 1],   a: [70, 80, 100, 0.05],  b: [50, 60, 75, 0.035],  c: [60, 60, 80, 0.025] }, // graphite
+  { base: [3, 5, 10, 1],  a: [40, 80, 150, 0.08],  b: [30, 90, 120, 0.035], c: [50, 50, 100, 0.03] }, // ink
+  { base: [3, 6, 9, 1],   a: [30, 90, 120, 0.06],  b: [30, 100, 130, 0.03], c: [40, 60, 90, 0.025] }, // midnight
+  { base: [2, 3, 5, 1],   a: [40, 50, 80, 0.045],  b: [30, 40, 60, 0.03],   c: [40, 40, 60, 0.02] },  // obsidian
 ];
 const ATMOS = {
   enabled: true,
@@ -1593,10 +1587,10 @@ const ATMOS = {
   init() {
     const pool = [...MOODS].sort(() => Math.random() - 0.5);
     this.stops = [
-      { at: 0,    base: [5, 11, 24, 1], a: [61, 123, 255, 0.30], b: [92, 225, 255, 0.09], c: [163, 149, 255, 0.08] }, // header blue
+      { at: 0,    base: [4, 6, 11, 1], a: [50, 95, 190, 0.13], b: [70, 170, 220, 0.04], c: [90, 90, 170, 0.03] }, // header: near-black, faint blue
       { at: 0.32, ...pool[0] },
       { at: 0.66, ...pool[1] },
-      { at: 0.97, base: [3, 3, 4, 1], a: [70, 80, 110, 0.07], b: [50, 55, 75, 0.05], c: [90, 70, 100, 0.04] },  // near black
+      { at: 0.97, base: [2, 2, 4, 1], a: [50, 60, 90, 0.04], b: [40, 45, 60, 0.03], c: [60, 55, 80, 0.02] },  // black
     ];
     window.addEventListener('scroll', () => this.update(), { passive: true });
     window.addEventListener('resize', () => this.update(), { passive: true });
