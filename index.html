@@ -74,7 +74,7 @@
      Blue at the top of the page; as you scroll it wanders through darker,
      quieter tones (a different path on every visit) and settles near black. */
   .atmos { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; background: var(--atmos-base); }
-  .atmos span { position: absolute; width: 110vmax; height: 110vmax; border-radius: 50%; will-change: transform; }
+  .atmos span { position: absolute; width: 110vmax; height: 110vmax; border-radius: 50%; }
   .atmos .g1 { left: calc(50% - 55vmax); top: -78vmax; background: radial-gradient(closest-side, var(--atmos-a), transparent); animation: drift1 46s ease-in-out infinite alternate; }
   .atmos .g2 { left: 40vw; top: -10vmax; background: radial-gradient(closest-side, var(--atmos-b), transparent); animation: drift2 58s ease-in-out infinite alternate; }
   .atmos .g3 { left: -62vmax; top: 25vh; background: radial-gradient(closest-side, var(--atmos-c), transparent); animation: drift3 66s ease-in-out infinite alternate; }
@@ -163,34 +163,18 @@
   }
   /* Grid floor: drifts away from the viewer; light cycles occasionally ride it */
   .hero-floor {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
-    perspective: 380px; perspective-origin: 50% 0%;
-    overflow: hidden; pointer-events: none; z-index: -1;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 62%, transparent 100%);
-            mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 62%, transparent 100%);
+    position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-h, 42%);
+    pointer-events: none; z-index: -1;
   }
-  .floor-plane {
-    position: absolute; left: -60%; right: -60%; top: 0; height: 220%;
-    transform: rotateX(72deg); transform-origin: 50% 0%;
-    background-image:
-      linear-gradient(to right, rgba(92,225,255,0.13) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(92,225,255,0.13) 1px, transparent 1px);
-    background-size: 72px 72px;
-    animation: gridAway 9s linear infinite;
-  }
+  .hero-floor canvas { display: block; width: 100%; height: 100%; }
   .hero-horizon {
-    position: absolute; left: 0; right: 0; bottom: 42%; height: 1px; z-index: -1;
+    position: absolute; left: 0; right: 0; bottom: var(--floor-h, 42%); height: 1px; z-index: -1;
     background: linear-gradient(90deg, transparent 10%, rgba(92,225,255,0.35) 50%, transparent 90%);
     box-shadow: 0 0 22px 1px rgba(92,225,255,0.14);
     pointer-events: none;
   }
-  /* a light cycle: bright head, fading light-wall behind it */
-  .cycle { position: absolute; pointer-events: none; border-radius: 2px; filter: drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 10px var(--c)); }
-  .cycle.depth { width: 3px; height: 200px; background: linear-gradient(to bottom, #fff 0, var(--c) 8px, color-mix(in srgb, var(--c) 55%, transparent) 30px, transparent 100%); }
-  .cycle.lateral { height: 3px; width: 300px; }
-  .cycle.lateral.ltr { background: linear-gradient(to left, #fff 0, var(--c) 8px, color-mix(in srgb, var(--c) 55%, transparent) 30px, transparent 100%); }
-  .cycle.lateral.rtl { background: linear-gradient(to right, #fff 0, var(--c) 8px, color-mix(in srgb, var(--c) 55%, transparent) 30px, transparent 100%); }
-  body.no-grid .hero-floor, body.no-grid .hero-horizon, body.no-grid .hero-blueprint { display: none; }
+  .hero-runs { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+  body.no-grid .hero-floor, body.no-grid .hero-horizon, body.no-grid .hero-blueprint, body.no-grid .hero-runs { display: none; }
 
   .hero-photo-wrap {
     position: relative; width: clamp(200px, 19vw, 280px); aspect-ratio: 1; margin-bottom: 40px;
@@ -529,7 +513,6 @@
   @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
   @keyframes lbIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
-  @keyframes gridAway { from { background-position: 0 72px; } to { background-position: 0 0; } }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -539,6 +522,8 @@
 
   /* ── RESPONSIVE ───────────────────────────────────────────────────── */
   @media (max-width: 700px) {
+    .atmos span { animation: none; }
+    .crossroad a { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(8,20,42,0.82); }
     body { font-size: 1.0625rem; }
     #hero { padding-top: 84px; padding-bottom: 96px; }
     .hero-photo-wrap { width: 184px; margin-bottom: 32px; }
@@ -576,8 +561,9 @@
 <!-- ── HERO ───────────────────────────────────────────── -->
 <section id="hero">
   <div class="hero-blueprint" aria-hidden="true"></div>
+  <canvas class="hero-runs" id="runsCanvas" aria-hidden="true"></canvas>
   <div class="hero-horizon" aria-hidden="true"></div>
-  <div class="hero-floor" aria-hidden="true"><div class="floor-plane" id="floorPlane"></div></div>
+  <div class="hero-floor" aria-hidden="true"><canvas id="floorCanvas"></canvas></div>
   <div class="hero-photo-wrap" id="hero-photo-wrap">
     <div id="hero-photo-skeleton" class="skeleton skeleton-photo"></div>
     <img id="hero-photo" src="" alt="Filip Mráček" class="face-photo" onclick="openLightbox()" style="visibility:hidden">
@@ -1293,51 +1279,293 @@ function closeLightbox() {
   };
 }
 
-// ── Light cycles: an occasional streak of light rides the grid away from you ──
-let heroOnScreen = true;
+// ── Grid floor + light cycles, drawn on a flat canvas ──
+// (A CSS 3D-tilted layer flickers or vanishes on mobile Safari while scrolling;
+//  a plain 2D canvas stays stable.) The floor drifts away from the viewer and an
+//  occasional light cycle rides it.
+const FLOOR = {
+  canvas: null, ctx: null, W: 0, H: 0, dpr: 1,
+  phase: 0, last: 0, raf: 0, visible: true, cycles: [],
+  f: 0, sw: 1, zNear: 1,
+  init() {
+    this.canvas = document.getElementById('floorCanvas');
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    if ('ResizeObserver' in window) new ResizeObserver(() => this.resize()).observe(this.canvas.parentElement);
+    window.addEventListener('resize', () => this.resize());
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; this.kick(); }).observe(document.getElementById('hero'));
+    }
+    document.addEventListener('visibilitychange', () => this.kick());
+    this.resize();
+  },
+  resize() {
+    const r = this.canvas.parentElement.getBoundingClientRect();
+    const W = Math.round(r.width), H = Math.round(r.height);
+    if (!W || !H || (W === this.W && Math.abs(H - this.H) < 2)) return;
+    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.W = W; this.H = H;
+    this.canvas.width = W * this.dpr; this.canvas.height = H * this.dpr;
+    // projection: horizon at the top edge, camera height 1, rows 1 unit apart
+    this.f = H * 0.9;               // focal length → nearest visible row sits at the bottom
+    this.zNear = this.f / H;        // depth seen at the bottom edge
+    this.sw = (W / 7) / this.f;     // column spacing: ~7 columns across at depth 1
+    this.draw();
+    this.kick();
+  },
+  colour(name) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#5ce1ff';
+    const c = hexToRgba(v.startsWith('#') ? v : '#5ce1ff');
+    return `${c[0]},${c[1]},${c[2]}`;
+  },
+  off() { return document.body.classList.contains('no-grid'); },
+  kick() {
+    if (REDUCED_MOTION || this.raf || this.off() || document.hidden || !this.visible) return;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(t => this.frame(t));
+  },
+  frame(t) {
+    this.raf = 0;
+    if (this.off() || document.hidden || !this.visible) return;
+    const dt = Math.min(64, t - this.last); this.last = t;
+    this.phase = (this.phase + dt / 9000) % 1;      // rows drift away: one row per 9 s
+    for (const c of this.cycles) c.age += dt;
+    this.cycles = this.cycles.filter(c => c.age < c.dur);
+    this.draw();
+    this.raf = requestAnimationFrame(tt => this.frame(tt));
+  },
+  draw() {
+    const { ctx, W, H, f, dpr } = this;
+    if (!ctx || !W) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2;
+    const rgb = this.colour('--accent');
+    // fade towards the horizon and towards the bottom edge
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, `rgba(${rgb},0)`);
+    g.addColorStop(0.3, `rgba(${rgb},0.16)`);
+    g.addColorStop(0.7, `rgba(${rgb},0.16)`);
+    g.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.strokeStyle = g; ctx.lineWidth = 1;
+    ctx.beginPath();
+    // rows: depth z = n - phase (increasing phase moves them away)
+    for (let n = 1; n < 60; n++) {
+      const z = this.zNear + (n - 1) + this.phase;   // phase grows → rows recede
+      const y = f / z;
+      if (y > H + 1) continue;
+      if (y < 1) break;
+      ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(W, Math.round(y) + 0.5);
+    }
+    // columns: straight lines from the vanishing point
+    const reach = Math.ceil((W / 2) / (f * this.sw / this.zNear)) + 1;
+    for (let k = -reach; k <= reach; k++) {
+      const xb = cx + f * k * this.sw / this.zNear;
+      ctx.moveTo(cx, 0); ctx.lineTo(xb, H);
+    }
+    ctx.stroke();
+    // light cycles
+    for (const c of this.cycles) this.drawCycle(c);
+  },
+  project(x, z) { return [this.W / 2 + this.f * x / z, this.f / z]; },
+  drawCycle(c) {
+    const { ctx } = this;
+    const p = c.age / c.dur;
+    const fade = Math.min(1, p / 0.08) * Math.min(1, (1 - p) / 0.15);
+    let head, tail, width;
+    if (c.kind === 'depth') {
+      const z = c.z0 + (c.z1 - c.z0) * p;
+      const zt = Math.max(this.zNear * 0.6, z - c.len);
+      head = this.project(c.x, z); tail = this.project(c.x, zt);
+      width = Math.max(1, 3 * this.zNear / z);
+    } else {
+      const x = c.x0 + (c.x1 - c.x0) * p;
+      head = this.project(x, c.z); tail = this.project(x - Math.sign(c.x1 - c.x0) * c.len, c.z);
+      width = Math.max(1, 3 * this.zNear / c.z);
+    }
+    const grad = ctx.createLinearGradient(tail[0], tail[1], head[0], head[1]);
+    grad.addColorStop(0, `rgba(${c.rgb},0)`);
+    grad.addColorStop(0.85, `rgba(${c.rgb},${0.75 * fade})`);
+    grad.addColorStop(1, `rgba(255,255,255,${fade})`);
+    ctx.save();
+    ctx.strokeStyle = grad; ctx.lineWidth = width; ctx.lineCap = 'round';
+    ctx.shadowColor = `rgba(${c.rgb},${0.9 * fade})`; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(tail[0], tail[1]); ctx.lineTo(head[0], head[1]); ctx.stroke();
+    ctx.restore();
+  },
+};
+
 function launchCycle() {
-  const plane = document.getElementById('floorPlane');
-  if (!plane || !plane.offsetWidth) return;
-  const W = plane.offsetWidth, H = plane.offsetHeight, G = 72;
-  const colours = ['var(--accent)', 'var(--accent)', 'var(--accent-light)', 'var(--highlight)'];
-  const el = document.createElement('div');
-  el.className = 'cycle';
-  el.style.setProperty('--c', colours[Math.floor(Math.random() * colours.length)]);
-  let frames, duration;
+  if (!FLOOR.W || FLOOR.off() || document.body.classList.contains('no-cycles')) return;
+  const names = ['--accent', '--accent', '--accent-light', '--highlight'];
+  const rgb = FLOOR.colour(names[Math.floor(Math.random() * names.length)]);
   if (Math.random() < 0.7) {
-    // straight away from the viewer, along one of the side lanes, until it vanishes at the horizon
-    const centre = Math.round(W / 2 / G);
-    const lane = (2 + Math.floor(Math.random() * 6)) * (Math.random() < 0.5 ? -1 : 1);
-    el.classList.add('depth');
-    el.style.left = ((centre + lane) * G - 1) + 'px';
-    el.style.top = '0';
-    const near = Math.min(H, 360); // the floor only shows its first few hundred px of depth
-    frames = [{ transform: `translateY(${near}px)`, opacity: 0 }, { opacity: 1, offset: 0.08 }, { transform: 'translateY(-220px)', opacity: 1 }];
-    duration = 3600 + Math.random() * 2400;
+    // straight away from the viewer along a side lane, until it melts into the horizon
+    const lane = (2 + Math.floor(Math.random() * 5)) * (Math.random() < 0.5 ? -1 : 1);
+    FLOOR.cycles.push({ kind: 'depth', rgb, x: lane * FLOOR.sw, z0: FLOOR.zNear * 0.9, z1: 28,
+      len: 2.2, age: 0, dur: 3600 + Math.random() * 2400 });
   } else {
-    // across the floor, left→right or right→left
+    // across the floor in the distance
+    const z = 3 + Math.random() * 5;
+    const half = (FLOOR.W / 2) / FLOOR.f * z * 0.8;
     const ltr = Math.random() < 0.5;
-    el.classList.add('lateral', ltr ? 'ltr' : 'rtl');
-    el.style.top = Math.round(H * (0.05 + Math.random() * 0.12) / G) * G - 1 + 'px';
-    el.style.left = '0';
-    const a = `translateX(${W * 0.25}px)`, b = `translateX(${W * 0.75 - 300}px)`;
-    frames = ltr ? [{ transform: a, opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 1, offset: 0.85 }, { transform: b, opacity: 0 }]
-                 : [{ transform: b, opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 1, offset: 0.85 }, { transform: a, opacity: 0 }];
-    duration = 3800 + Math.random() * 2000;
+    FLOOR.cycles.push({ kind: 'lateral', rgb, z, x0: ltr ? -half : half, x1: ltr ? half : -half,
+      len: half * 0.35, age: 0, dur: 3800 + Math.random() * 2000 });
   }
-  plane.appendChild(el);
-  el.animate(frames, { duration, easing: 'linear' }).onfinish = () => el.remove();
+  FLOOR.kick();
 }
 
-function startCycles() {
-  if (REDUCED_MOTION) return;
+// Keep the grid's horizon below the name and motto. Without the welcome video
+// (or while it loads) the header is shorter and the horizon would otherwise
+// sit right under the name like an underline.
+let lastFloorH = 0;
+function positionFloor() {
   const hero = document.getElementById('hero');
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([e]) => { heroOnScreen = e.isIntersecting; }).observe(hero);
-  }
-  const tick = () => {
+  const motto = document.getElementById('hero-motto');
+  if (!hero || !motto) return;
+  const H = hero.offsetHeight;
+  const nav = document.getElementById('crossroad');
+  const gap = nav ? nav.offsetTop - (motto.offsetTop + motto.offsetHeight) : 52;
+  const minTop = motto.offsetTop + motto.offsetHeight + gap / 2;
+  const floorH = Math.round(Math.max(160, H - Math.max(H * 0.58, minTop)));
+  if (Math.abs(floorH - lastFloorH) < 3) return;   // ignore tiny changes (mobile address bar)
+  lastFloorH = floorH;
+  hero.style.setProperty('--floor-h', floorH + 'px');
+}
+if ('ResizeObserver' in window) new ResizeObserver(positionFloor).observe(document.getElementById('hero'));
+window.addEventListener('resize', positionFloor);
+
+// ── Light cycles on the flat grid behind the portrait ──
+// They follow the grid lines (64px), sometimes turn 90°, and fade with the
+// same soft oval as the grid. The canvas only animates while a cycle is out.
+const RUNS = {
+  canvas: null, ctx: null, W: 0, H: 0, dpr: 1, G: 64, runs: [], raf: 0, last: 0,
+  init() {
+    this.canvas = document.getElementById('runsCanvas');
+    if (!this.canvas) return;
+    this.ctx = this.canvas.getContext('2d');
+    const hero = document.getElementById('hero');
+    if ('ResizeObserver' in window) new ResizeObserver(() => this.resize()).observe(hero);
+    this.resize();
+  },
+  resize() {
+    const hero = document.getElementById('hero');
+    const W = hero.clientWidth, H = hero.clientHeight;
+    if (!W || !H || (W === this.W && Math.abs(H - this.H) < 2)) return;
+    this.W = W; this.H = H;
+    this.dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    this.canvas.width = W * this.dpr; this.canvas.height = H * this.dpr;
+  },
+  // same falloff as the grid's CSS mask: ellipse 70% × 60% at 50% 35%, solid to 20%, gone at 80%
+  maskAt(x, y) {
+    const dx = (x - this.W * 0.5) / (this.W * 0.7), dy = (y - this.H * 0.35) / (this.H * 0.6);
+    const d = Math.sqrt(dx * dx + dy * dy);
+    return Math.max(0, Math.min(1, (0.8 - d) / 0.6));
+  },
+  spawn() {
+    if (!this.W) return;
+    const G = this.G;
+    let gx, gy;
+    for (let i = 0; i < 30; i++) {   // start on an intersection well inside the visible oval
+      gx = Math.round(Math.random() * this.W / G) * G;
+      gy = Math.round(Math.random() * this.H * 0.7 / G) * G;
+      if (this.maskAt(gx, gy) > 0.45) break;
+    }
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const names = ['--accent', '--accent', '--accent-light', '--highlight'];
+    this.runs.push({
+      x: gx, y: gy, dir: dirs[Math.floor(Math.random() * 4)],
+      nodes: [[gx, gy]], sinceNode: 0,
+      speed: 150 + Math.random() * 90, // px per second
+      age: 0, dur: 3500 + Math.random() * 2500,
+      rgb: FLOOR.colour(names[Math.floor(Math.random() * names.length)]),
+    });
+    this.kick();
+  },
+  kick() {
+    if (this.raf || REDUCED_MOTION) return;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(t => this.frame(t));
+  },
+  frame(t) {
+    this.raf = 0;
+    const dt = Math.min(64, t - this.last); this.last = t;
+    const G = this.G;
+    for (const r of this.runs) {
+      r.age += dt;
+      let step = r.speed * dt / 1000;
+      while (step > 0) {                       // move along the line, turning only at intersections
+        const toNode = G - r.sinceNode;
+        const s = Math.min(step, toNode);
+        r.x += r.dir[0] * s; r.y += r.dir[1] * s; r.sinceNode += s; step -= s;
+        if (r.sinceNode >= G - 1e-6) {
+          r.sinceNode = 0;
+          r.x = Math.round(r.x / G) * G; r.y = Math.round(r.y / G) * G;
+          if (Math.random() < 0.22) {
+            r.nodes.push([r.x, r.y]);
+            r.dir = Math.random() < 0.5 ? [r.dir[1], -r.dir[0]] : [-r.dir[1], r.dir[0]];
+          }
+        }
+      }
+      if (r.nodes.length > 8) r.nodes.splice(0, r.nodes.length - 8);
+    }
+    this.runs = this.runs.filter(r => r.age < r.dur);
+    this.draw();
+    if (this.runs.length) this.raf = requestAnimationFrame(tt => this.frame(tt));
+  },
+  draw() {
+    const { ctx, dpr } = this;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, this.W, this.H);
+    const TRAIL = 170;
+    for (const r of this.runs) {
+      const life = Math.min(1, r.age / 300) * Math.min(1, (r.dur - r.age) / 700);
+      // walk back from the head along the corners, up to TRAIL px
+      const pts = [[r.x, r.y]];
+      let left = TRAIL;
+      for (let i = r.nodes.length - 1; i >= 0 && left > 0; i--) {
+        const [px, py] = pts[pts.length - 1], [nx, ny] = r.nodes[i];
+        const seg = Math.abs(px - nx) + Math.abs(py - ny);
+        if (seg >= left) { const k = left / (seg || 1); pts.push([px + (nx - px) * k, py + (ny - py) * k]); left = 0; }
+        else { pts.push([nx, ny]); left -= seg; }
+      }
+      let dist = 0;
+      ctx.lineCap = 'round'; ctx.lineWidth = 1.6;
+      ctx.shadowBlur = 8; ctx.shadowColor = `rgba(${r.rgb},${0.8 * life})`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+        const seg = Math.abs(ax - bx) + Math.abs(ay - by);
+        if (!seg) continue;
+        const a0 = (1 - dist / TRAIL) * life * this.maskAt(ax, ay);
+        const a1 = (1 - (dist + seg) / TRAIL) * life * this.maskAt(bx, by);
+        const g = ctx.createLinearGradient(ax, ay, bx, by);
+        g.addColorStop(0, `rgba(${r.rgb},${Math.max(0, 0.85 * a0)})`);
+        g.addColorStop(1, `rgba(${r.rgb},${Math.max(0, 0.85 * a1)})`);
+        ctx.strokeStyle = g;
+        ctx.beginPath(); ctx.moveTo(ax + 0.5, ay + 0.5); ctx.lineTo(bx + 0.5, by + 0.5); ctx.stroke();
+        dist += seg;
+      }
+      // bright head
+      const ha = life * this.maskAt(r.x, r.y);
+      ctx.fillStyle = `rgba(255,255,255,${0.9 * ha})`;
+      ctx.beginPath(); ctx.arc(r.x + 0.5, r.y + 0.5, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+  },
+};
+
+function startCycles() {
+  FLOOR.init();
+  RUNS.init();
+  if (REDUCED_MOTION) return;
+  const runsTick = () => {
     const off = document.body.classList.contains('no-grid') || document.body.classList.contains('no-cycles');
-    if (!off && !document.hidden && heroOnScreen) launchCycle();
+    if (!off && !document.hidden && FLOOR.visible) RUNS.spawn();
+    setTimeout(runsTick, 5000 + Math.random() * 8000);
+  };
+  setTimeout(runsTick, 1500);
+  const tick = () => {
+    if (!document.hidden && FLOOR.visible) launchCycle();
     setTimeout(tick, 4000 + Math.random() * 7000);
   };
   setTimeout(tick, 2500);
@@ -1405,11 +1633,12 @@ const ATMOS = {
   },
   paint() {
     const css = v => `rgba(${v[0] | 0},${v[1] | 0},${v[2] | 0},${v[3].toFixed(3)})`;
-    const root = document.documentElement.style;
-    root.setProperty('--atmos-base', css(this.cur.base));
-    root.setProperty('--atmos-a', css(this.cur.a));
-    root.setProperty('--atmos-b', css(this.cur.b));
-    root.setProperty('--atmos-c', css(this.cur.c));
+    const el = document.querySelector('.atmos');
+    if (!el) return;
+    el.style.setProperty('--atmos-base', css(this.cur.base));
+    el.style.setProperty('--atmos-a', css(this.cur.a));
+    el.style.setProperty('--atmos-b', css(this.cur.b));
+    el.style.setProperty('--atmos-c', css(this.cur.c));
   },
 };
 ATMOS.init();
@@ -1450,6 +1679,7 @@ async function boot() {
     document.getElementById('hero-motto').textContent = CMS.config['hero-motto-' + currentLang] || '';
     setFooter();
     setBackUpLabel();
+    positionFloor();
     initScrollReveal();
 
     // Hero photo
